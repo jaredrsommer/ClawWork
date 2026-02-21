@@ -3,6 +3,12 @@ Revenue Pipeline Engine
 
 Agentic loop that drives all 10 revenue stream workflows.
 Uses OpenAI function calling to orchestrate search → analyze → create cycles.
+
+Content Policy:
+  All generated content is strictly politically neutral. The engine injects
+  a non-negotiable neutrality directive into every system prompt to ensure
+  content never takes political sides, mentions political parties, or
+  expresses political opinions — making it appropriate for any audience.
 """
 
 import os
@@ -48,6 +54,27 @@ class RevenueEngine:
         )
         self.output_manager = OutputManager(output_dir)
 
+    # Injected into EVERY system prompt — non-negotiable
+    NEUTRALITY_DIRECTIVE = """
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CONTENT POLICY — STRICTLY ENFORCED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+All output must be politically neutral and universally appealing.
+
+NEVER:
+- Express or imply support for any political party, politician, or ideology
+- Take sides on politically divisive topics (abortion, gun control, immigration policy, etc.)
+- Use coded political language, dog whistles, or partisan framing
+- Write content that would alienate readers based on political beliefs
+
+ALWAYS:
+- Stick to business, professional development, finance, technology, and industry topics
+- When covering news or trends, present facts without political spin
+- If a topic touches politics, reframe it around its business/economic implications only
+- Write for ALL readers — conservative, liberal, and everyone in between
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
+
     def run(
         self,
         stream_id: str,
@@ -81,8 +108,11 @@ class RevenueEngine:
         self._log(f"  Output dir     : {output_dir}")
         self._log(f"{'='*62}\n")
 
+        # Prepend the neutrality directive to every system prompt
+        full_system = system_prompt + self.NEUTRALITY_DIRECTIVE
+
         messages = [
-            {"role": "system", "content": system_prompt},
+            {"role": "system", "content": full_system},
             {"role": "user", "content": task_prompt},
         ]
 

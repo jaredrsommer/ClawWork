@@ -1,0 +1,141 @@
+{
+  "_doc": "Revenue Scheduler Configuration — edit this file to customize your automation.",
+  "_content_policy": "All generated content is politically neutral. The engine enforces this automatically.",
+
+  "schedules": [
+
+    {
+      "id": "weekly_newsletter",
+      "name": "Weekly Newsletter Issue",
+      "stream": "newsletter",
+      "enabled": false,
+      "_note": "Set enabled=true after adding BEEHIIV_API_KEY and BEEHIIV_PUBLICATION_ID to .env",
+      "cron": {"day_of_week": "mon", "hour": 7, "minute": 0},
+      "params": {
+        "newsletter_name": "The AI Brief",
+        "niche": "artificial intelligence and technology",
+        "frequency": "weekly",
+        "tone": "professional",
+        "format": "hybrid",
+        "target_audience": "tech-savvy professionals and founders"
+      },
+      "auto_increment": {
+        "param": "issue_number",
+        "state_key": "newsletter_issue"
+      },
+      "publish_to": ["beehiiv", "linkedin"],
+      "model": "gpt-4o",
+      "max_steps": 20
+    },
+
+    {
+      "id": "daily_seo_article",
+      "name": "Daily SEO Article",
+      "stream": "seo_content",
+      "enabled": false,
+      "_note": "Set enabled=true after adding WORDPRESS_URL, WORDPRESS_USER, WORDPRESS_APP_PASSWORD to .env. Populate keyword_queue.txt",
+      "cron": {"hour": 6, "minute": 30},
+      "params": {
+        "word_count": 1500,
+        "style": "listicle",
+        "include_brief": true
+      },
+      "keyword_queue": "./revenue/keyword_queue.txt",
+      "publish_to": ["wordpress", "medium"],
+      "model": "gpt-4o",
+      "max_steps": 20
+    },
+
+    {
+      "id": "weekly_ghostwriting_linkedin",
+      "name": "Weekly LinkedIn Content Batch",
+      "stream": "ghostwriting",
+      "enabled": false,
+      "_note": "Set enabled=true after configuring client and LINKEDIN_ACCESS_TOKEN",
+      "cron": {"day_of_week": "sun", "hour": 8, "minute": 0},
+      "params": {
+        "client": "My Brand",
+        "niche": "B2B technology and productivity",
+        "platform": "both",
+        "tone": "professional",
+        "posts": 7,
+        "topics": ""
+      },
+      "publish_to": ["buffer"],
+      "model": "gpt-4o",
+      "max_steps": 20
+    },
+
+    {
+      "id": "weekly_research_report",
+      "name": "Weekly Research Report",
+      "stream": "research",
+      "enabled": false,
+      "_note": "Generates a new industry research report every week",
+      "cron": {"day_of_week": "wed", "hour": 9, "minute": 0},
+      "params": {
+        "topic": "State of AI Productivity Tools",
+        "industry": "software",
+        "report_type": "trend_report",
+        "depth": "standard",
+        "include_charts": true
+      },
+      "publish_to": ["medium", "reddit"],
+      "model": "gpt-4o",
+      "max_steps": 25
+    },
+
+    {
+      "id": "daily_podcast_production",
+      "name": "Daily Podcast Show Notes",
+      "stream": "podcast",
+      "enabled": false,
+      "_note": "Set topic and guest for each episode. Useful for podcast producers with daily episodes.",
+      "cron": {"hour": 5, "minute": 0},
+      "params": {
+        "podcast_name": "The Founder's Edge",
+        "topic": "Lessons from building a profitable online business",
+        "niche": "entrepreneurship",
+        "package": "full"
+      },
+      "auto_increment": {
+        "param": "episode_number",
+        "state_key": "podcast_episode"
+      },
+      "publish_to": ["wordpress", "twitter"],
+      "model": "gpt-4o",
+      "max_steps": 20
+    }
+
+  ],
+
+  "publisher_settings": {
+    "twitter": {
+      "thread_if_long": true,
+      "max_tweet_length": 280
+    },
+    "linkedin": {
+      "visibility": "PUBLIC",
+      "post_immediately": true
+    },
+    "medium": {
+      "status": "draft",
+      "_note": "Change to 'public' when ready to auto-publish"
+    },
+    "wordpress": {
+      "status": "draft",
+      "_note": "Change to 'publish' to auto-publish immediately"
+    },
+    "beehiiv": {
+      "status": "draft",
+      "audience": "free"
+    },
+    "buffer": {
+      "max_posts": 7
+    },
+    "reddit": {
+      "subreddits": ["r/artificial", "r/MachineLearning", "r/entrepreneur"],
+      "_note": "Only post to communities where you're an active member. Always follow subreddit rules."
+    }
+  }
+}

@@ -2,50 +2,38 @@
 """
 Revenue Streams CLI — ClawWork AI Revenue Generation System
 
+All content is politically neutral by design — safe for any audience.
+
 Commands:
   list                          List all available revenue streams
   run  <stream> [--param value] Run a specific revenue stream pipeline
   api  [--port 8080]            Start the SaaS REST API server
   history [--stream <id>]       Show past sessions
+  schedule start                Start the autonomous cron scheduler daemon
+  schedule status               Show scheduled jobs and next run times
+  schedule run-now <id>         Trigger a scheduled job immediately
+  schedule history              Show scheduler run history
+  publish <session_id>          Push a past session's output to platforms
+  publishers                    List all platforms and credential status
 
 Examples:
 
-  # Ghostwriting (LinkedIn/Twitter content)
   python revenue/run.py run ghostwriting --client "Sarah Chen" --niche "B2B SaaS" --posts 10
-
-  # SEO article
   python revenue/run.py run seo_content --keyword "best CRM software 2026" --words 1800
-
-  # Digital product (Excel template)
   python revenue/run.py run products --product-type excel_tracker --niche "personal finance"
-
-  # PowerPoint deck
   python revenue/run.py run slide_decks --deck-type pitch_deck --topic "AI startup raising seed"
-
-  # Research report
   python revenue/run.py run research --topic "State of AI in Healthcare 2026" --industry healthcare
-
-  # Podcast production
-  python revenue/run.py run podcast --topic "How to build a SaaS without code" --guest "Jane Doe"
-
-  # Book manuscript (KDP)
+  python revenue/run.py run podcast --topic "Building a SaaS without code" --guest "Jane Doe"
   python revenue/run.py run publishing --title "The 5AM Framework" --genre self_help
-
-  # Data analysis
-  python revenue/run.py run data_analysis --analysis-topic "Q4 2025 sales performance" --industry ecommerce
-
-  # Newsletter issue
+  python revenue/run.py run data_analysis --analysis-topic "Q4 2025 sales" --industry ecommerce
   python revenue/run.py run newsletter --newsletter-name "The AI Brief" --niche "artificial intelligence"
-
-  # SaaS API marketing kit
   python revenue/run.py run saas_api --asset-type full_kit --product-name "ContentAPI"
 
-  # Start REST API server
   python revenue/run.py api --port 8080
-
-  # View session history
-  python revenue/run.py history
-  python revenue/run.py history --stream ghostwriting
+  python revenue/run.py schedule start
+  python revenue/run.py schedule run-now weekly_newsletter
+  python revenue/run.py publish ghostwriting_20260221_143000 --platform twitter linkedin
+  python revenue/run.py publishers
 """
 
 import sys
@@ -292,6 +280,113 @@ def _print_stream_help(stream_id: str, stream) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Schedule commands
+# ---------------------------------------------------------------------------
+
+def cmd_schedule(args) -> None:
+    """Dispatch schedule sub-commands."""
+    from revenue.scheduler import (
+        start_daemon, print_status, print_history, run_schedule, _load_config
+    )
+
+    subcmd = getattr(args, "subcmd", "status")
+
+    if subcmd == "start":
+        dry_run = getattr(args, "dry_run", False)
+        print(f"\n  Starting Revenue Scheduler {'(DRY RUN)' if dry_run else ''}...")
+        start_daemon(dry_run=dry_run)
+
+    elif subcmd == "status":
+        print_status()
+
+    elif subcmd == "run-now":
+        schedule_id = getattr(args, "schedule_id", None)
+        if not schedule_id:
+            print(_red("  Error: provide a schedule ID. See: python revenue/run.py schedule status"))
+            sys.exit(1)
+        config = _load_config()
+        matches = [s for s in config.get("schedules", []) if s["id"] == schedule_id]
+        if not matches:
+            print(_red(f"  Error: schedule '{schedule_id}' not found"))
+            sys.exit(1)
+        dry_run = getattr(args, "dry_run", False)
+        result = run_schedule(matches[0], dry_run=dry_run)
+        print(f"\n  Status: {result.get('status')}")
+
+    elif subcmd == "history":
+        print_history(limit=30)
+
+    else:
+        print(f"  Unknown schedule sub-command: {subcmd}")
+        print("  Available: start | status | run-now <id> | history")
+
+
+# ---------------------------------------------------------------------------
+# Publish command
+# ---------------------------------------------------------------------------
+
+def cmd_publish(args) -> None:
+    """Push a past session's output to one or more platforms."""
+    from revenue.core.output import OutputManager
+    from revenue.publishers import get_publisher, list_publishers
+
+    session_id = args.session_id
+    platforms = args.platform or []
+    output_dir = args.output or "./revenue/output"
+
+    # Find session
+    om = OutputManager(output_dir)
+    sessions = om.list_sessions()
+    session = next((s for s in sessions if s.get("session_id") == session_id), None)
+    if not session:
+        print(_red(f"\n  Session '{session_id}' not found. Run: python revenue/run.py history\n"))
+        sys.exit(1)
+
+    stream_id = session.get("stream_id", "")
+    print(f"\n  Publishing session: {session_id}")
+    print(f"  Stream: {stream_id}  |  Files: {len(session.get('created_files', []))}")
+    print(f"  Platforms: {', '.join(platforms) if platforms else 'all configured'}\n")
+
+    all_pubs = list_publishers()
+    to_publish = {k: v for k, v in all_pubs.items()
+                  if (not platforms or k in platforms) and v["configured"]}
+
+    if not to_publish:
+        print(_yellow("  No platforms configured. Add credentials to .env and retry."))
+        print("  Run: python revenue/run.py publishers  to see what's needed\n")
+        return
+
+    for platform, info in to_publish.items():
+        pub = get_publisher(platform)
+        print(f"  [{platform}] Publishing...")
+        result = pub.publish(session, stream_id, settings={})
+        icon = _green("✓") if result.get("success") else _red("✗")
+        detail = result.get("url") or result.get("error") or ""
+        print(f"  [{platform}] {icon} {detail}")
+
+    print()
+
+
+# ---------------------------------------------------------------------------
+# Publishers command
+# ---------------------------------------------------------------------------
+
+def cmd_publishers(args) -> None:
+    """Show all platforms and their credential status."""
+    from revenue.publishers import list_publishers
+
+    pubs = list_publishers()
+    print(f"\n  {_bold('PLATFORMS & CREDENTIALS')}\n")
+    print(f"  {'PLATFORM':<14} {'STATUS':<14} {'REQUIRED ENV VARS'}")
+    print(f"  {'-'*14} {'-'*14} {'-'*40}")
+    for name, info in pubs.items():
+        status = _green("✓ configured") if info["configured"] else _red("✗ missing")
+        env_vars = ", ".join(info["required_env"])
+        print(f"  {name:<14} {status:<23} {env_vars}")
+    print(f"\n  Add credentials to your .env file, then retry.\n")
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -337,6 +432,35 @@ def main() -> None:
     hist_parser.add_argument("--stream", default=None, help="Filter by stream ID")
     hist_parser.add_argument("--output", default="./revenue/output", help="Output directory")
     hist_parser.set_defaults(func=cmd_history)
+
+    # ---- schedule ----
+    sched_parser = subparsers.add_parser("schedule", help="Manage the autonomous cron scheduler")
+    sched_sub = sched_parser.add_subparsers(dest="subcmd", metavar="subcmd")
+
+    sched_start = sched_sub.add_parser("start", help="Start scheduler daemon")
+    sched_start.add_argument("--dry-run", action="store_true", help="Test without calling LLM or posting")
+
+    sched_sub.add_parser("status", help="Show scheduled jobs and next run times")
+    sched_sub.add_parser("history", help="Show past scheduler runs")
+
+    sched_now = sched_sub.add_parser("run-now", help="Trigger a schedule immediately")
+    sched_now.add_argument("schedule_id", help="Schedule ID from scheduler_config.json")
+    sched_now.add_argument("--dry-run", action="store_true")
+
+    sched_parser.set_defaults(func=cmd_schedule)
+
+    # ---- publish ----
+    pub_parser = subparsers.add_parser("publish", help="Push a session's output to platforms")
+    pub_parser.add_argument("session_id", help="Session ID (from: python revenue/run.py history)")
+    pub_parser.add_argument("--platform", nargs="+",
+                            help="Platforms to publish to (default: all configured)",
+                            choices=["twitter", "linkedin", "medium", "wordpress", "beehiiv", "buffer", "reddit"])
+    pub_parser.add_argument("--output", default="./revenue/output", help="Output directory")
+    pub_parser.set_defaults(func=cmd_publish)
+
+    # ---- publishers ----
+    pubs_parser = subparsers.add_parser("publishers", help="List platforms and credential status")
+    pubs_parser.set_defaults(func=cmd_publishers)
 
     # Parse
     args = parser.parse_args()

@@ -1,0 +1,57 @@
+# SEO Keyword Queue for Daily Article Generation
+# One keyword per line. The scheduler pops the top keyword each day,
+# then rotates it to the bottom (round-robin, never exhausted).
+# Add/remove keywords freely. Lines starting with # are ignored.
+#
+# Tips:
+#   - Mix informational ("how to"), commercial ("best X"), and comparison ("X vs Y") queries
+#   - Target keywords with clear business intent (easier to monetize)
+#   - Aim for 1,000–10,000 monthly searches (lower competition than mega-keywords)
+
+# --- Productivity & Tools ---
+best project management software for small teams 2026
+how to use AI to automate your workday
+best CRM software for startups
+notion vs obsidian for productivity
+best time management techniques for entrepreneurs
+
+# --- Business & Finance ---
+how to start a profitable online business with no money
+best passive income ideas for 2026
+how to build a six figure freelance business
+best accounting software for freelancers
+how to price your services as a consultant
+
+# --- AI & Technology ---
+best AI writing tools for content creators 2026
+how to use ChatGPT to grow your business
+best AI tools for marketing teams
+how to automate social media with AI
+best no-code tools for building apps 2026
+
+# --- Marketing & Growth ---
+best email marketing platforms for small businesses
+how to grow a newsletter from 0 to 10000 subscribers
+best content marketing strategies for B2B companies
+how to write LinkedIn posts that get engagement
+best SEO tools for beginners 2026
+
+# --- Remote Work & Career ---
+best tools for remote teams in 2026
+how to negotiate a raise in 2026
+best skills to learn for high-paying remote jobs
+how to build a personal brand online
+best online courses for career growth
+
+# --- Health & Wellness (business angle) ---
+best productivity apps for work life balance
+how successful founders stay focused and energized
+best standing desks and ergonomic home office setups 2026
+how to avoid burnout as an entrepreneur
+
+# --- E-commerce & Sales ---
+best e-commerce platforms for small businesses 2026
+how to start dropshipping in 2026
+best Shopify apps to increase sales
+how to write product descriptions that convert
+best print on demand companies 2026
