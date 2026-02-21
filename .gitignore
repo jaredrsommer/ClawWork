@@ -84,3 +84,6 @@ clawmode_legacy/
 
 # External dependencies (installed separately)
 nanobot/
+
+# Revenue stream outputs (generated content — don't commit)
+revenue/output/
